@@ -1,0 +1,242 @@
+---
+title: "Manejo Datos"
+author: "Juan Daniel Bula"
+date: "9/12/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+
+Primero se carga la base de datos.
+
+
+```{r}
+#Librerias
+#install.packages("sp") #para rgdal
+library(stringr)
+library(dplyr)
+library(rgdal)
+library(plyr)
+library(tidyverse)
+datos <- read.csv("incidentes_viales.csv", dec=",", header=T,sep=";", encoding = "UTF-8")
+#Creamos la variable dia y hora
+datos$FECHA_ACCIDENTE <- as.Date(datos$FECHA_ACCIDENTE, format="%d/%m/%Y") 
+summary(datos$FECHA_ACCIDENTE)
+#class(base$FECHA_ACCIDENTE)
+colSums(is.na(datos)|datos=="") #cuenta los vacios
+summary(datos)
+str(datos)
+```
+
+
+## Corrigiendo los vacíos identificados
+
+
+### CLASE_ACCIDENTE
+
+Los 6 datos vacíos de la variable `CLASE_ACCIDENTE` se cambiarán por "NN", pues no fueron reportados.
+
+```{r}
+# reemplazar datos vacios de la variable CLASE_ACCIDENTE
+datos$CLASE_ACCIDENTE <- ifelse(datos$CLASE_ACCIDENTE == "","NN",datos$CLASE_ACCIDENTE) #Cambiar nivel vacio por "otro"
+datos$CLASE_ACCIDENTE <- iconv(datos$CLASE_ACCIDENTE, from = "UTF-8", to = "ASCII//TRANSLIT") # Correcion tildes
+```
+
+
+### DISEÑO
+
+En la variable `DISEÑO` que es el sitio donde ocurrió el accidente, se encuentran 1148 vacíos, se reemplazarán los vacios vacios por "NN" 
+
+
+```{r}
+# Cambiar datos vacios de la variable DISENO y correccion de niveles
+datos$DISEÑO <- ifelse(datos$DISEÑO == "","NN",datos$DISEÑO) #Cambiar nivel vacio por no especificado
+datos$DISENO <- iconv(datos$DISEÑO, from = "UTF-8",to="ASCII//TRANSLIT") #Quitar tildes
+```
+
+
+### CMBL
+
+A parte de los  18156 vacíos, se tienen 962 observaciones con caracteres extraños, como:
+AUC1
+AUC2
+Inst_14
+Inst_16
+Inst_18
+Inst_19
+Sin Inf
+SN01
+
+Para un total de 19118 registros mal estructurados o vacios.
+
+
+ 
+##  BARRIO, COMUNA, NUMCOMUNA
+ 
+ 
+Se encuentra con la siguiente cantidad de vacíos:
+
+### BARRIO:  
+
+vacios: 19006. A parte de los  19006 vacíos, se tiene 1822 obs adicionales con carácteres extraños:
+
+-número entre 0 y 9086
+-AUC1
+-AUC2
+-Inst
+-Sin Inf
+-Sin nombre
+
+Para un total de 20828 registros mal estructurados o vacios.
+
+
+
+### COMUNA:  
+
+vacíos: 12798. A parte de los  12798 vacíos, se tiene 7064 obs con carácteres extraños:
+
+-No Georef
+-0
+-In
+-AU
+-Sin Inf
+-SN
+
+
+Para un total de 19862 registros mal estructurados o vacios.
+
+
+### NUMCOMUNA:  
+
+vacíos: 0. Se tienen 20116 registros adicionales con carácteres extraños:
+
+-AU
+-In
+-Sin Inf
+-SN
+
+
+
+
+### Ahora procedemos a arreglar las variables COMUNA y BARRIO
+
+Con CBML y extrayendo los 4 primeros dígitos obtenemos la comuna y el barrio. Para eso usaremos un shape proporcionado por la oficina de catastro, donde se registran verdaderamente los nombres de barrios y comunas identificados con su código.
+
+
+
+
+```{r}
+catastro <- readOGR(dsn = "C:/Users/jdbul/OneDrive/Escritorio/TRABAJO-1-TAE/Limite_Barrio_Vereda_Catastral.shp", layer = "Limite_Barrio_Vereda_Catastral")
+#quitamos los 962 datos de CBML que están errados ---> quedan 269803
+datos <- datos[-which(datos$CBML %in% c("AUC1","AUC2","Inst_14","Inst_16","Inst_18","Inst_19","Sin Inf","SN01")),]
+#Creamos un nueva columna llamada CB en base que solo deja los primeros 4 digitos de CBML para buscarlos en la base de catastro y traer la comuna y el barrio de los que estén vacios.
+datos <- mutate(datos, CB = str_sub(CBML,1,4))
+#agregando un cero adelante a los CB y creando una nueva columna --> JCB
+datos <- mutate(datos, JCB=ifelse(nchar(CB)==3,paste0("0", CB),CB),CB)
+colnames(datos)#nombres de columnas
+#base unificada, se eliminan en total =  15794+962=16756 observaciones
+datos <- inner_join(datos, select(catastro@data,CODIGO,NOMBRE_COM,NOMBRE_BAR),
+                  by = c("JCB" = "CODIGO")) #quedan 254009 datos
+#Quitar repetidos por el inner_join
+datos <- datos %>%     #convirtiendo en factor para ver mejor los únicos
+  mutate(NRO_RADICADO = as.factor(NRO_RADICADO))
+radicados_duplicados <- datos$NRO_RADICADO[duplicated(datos$NRO_RADICADO)]
+radicados_duplicados  #verificar duplicados
+registros_rad_dup <- datos %>% 
+  
+  filter(NRO_RADICADO %in% radicados_duplicados) %>%  #
+  arrange(NRO_RADICADO)
+registros_rad_dup
+base_unif <- datos %>% 
+  filter(!(NRO_RADICADO %in% radicados_duplicados))
+#246417 observaciones únicas
+```
+se eliminaron 23386 observaciones
+
+
+
+
+
+
+
+Ahora se procede a eliminar las columnas repetidas y otras que no se consideran relevantes para el analisis.
+
+```{r}
+#Eliminar BARRIO, COMUNA, DIRECCION.ENCASILLADA, CBML, NCB, CB, JCB, FECHA_ACCIDENTES....
+datos2 <- select(base_unif,-BARRIO,-COMUNA,-DIRECCION.ENCASILLADA,-CBML,-CB,-JCB,-FECHA_ACCIDENTES,-EXPEDIENTE,-DISEÑO)
+```
+Nos quedan 14 variables y 246417 observaciones
+
+
+
+Quitar tilde a nombre de barrio
+```{r}
+datos2$NOMBRE_BAR <- iconv(datos2$NOMBRE_BAR, from = "UTF-8", to = "ASCII//TRANSLIT") # Correcion tildes
+```
+
+
+Separar la variable LOCATION
+
+
+```{r}
+datos2 <- separate(datos2,LOCATION,c("LONGITUD","LATITUD"),sep=",",convert=TRUE) #SEPARA LONGITUD Y LATITUD DE LOCATION
+datos2$LONGITUD <- substring(datos2$LONGITUD, first = 2) #QUITAR EL ELEMTO "["
+datos2$LATITUD <- gsub(" ","", datos2$LATITUD) #QUITAR EL ESPACIO ANTES DEL NUMERO
+datos2$LATITUD <- gsub("]","", datos2$LATITUD) #QUITAR "]"
+```
+
+
+
+
+
+Renombrar columnas
+
+```{r}
+#renombremos las columnas
+datos2 <- rename(datos2,  c("FECHA_ACCIDENTE"="FECHA","NOMBRE_BAR"="BARRIO","NOMBRE_COM"="COMUNA","GRAVEDAD_ACCIDENTE"="GRAVEDAD","CLASE_ACCIDENTE"="CLASE"))
+colnames(datos2)
+```
+
+
+
+#==============================
+
+ fechas especiales
+ 
+#==============================
+# Lectura registros de fechas especiales desde el 2014 a 2020
+
+
+```{r}
+fechas_especiales <- read.csv("dias_festivos.csv", sep = ",", header = T)
+class(fechas_especiales$FECHA)
+fechas_especiales$FECHA <- as.Date(fechas_especiales$FECHA, format="%d/%m/%Y")#año,mes,dia
+class(fechas_especiales$FECHA)
+```
+
+ahora unir las fechas especiales a los datos2 final
+
+
+```{r}
+# unir las fechas especiales a base2, los que nos son fechas especiales los pone como NA
+datos2 <- merge(x = datos2, y = fechas_especiales, by = "FECHA", all.x = T)
+datos2$FESTIVIDAD <- ifelse(is.na(datos2$FESTIVIDAD),"NO","SI")
+datos2$FESTIVIDAD <- as.factor(datos2$FESTIVIDAD)
+summary(datos2$FESTIVIDAD)
+```
+
+
+
+
+Archivo final
+
+```{r}
+ 
+write.csv(datos2,"C:/Users/jdbul/OneDrive/Escritorio/TRABAJO-1-TAE/accident_final.csv",fileEncoding = "UTF-8")
+```
