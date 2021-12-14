@@ -1,5 +1,5 @@
 ---
-title: <center> <h1> Predicción de la accidentalidad en la ciudad de Medellín entre los años 2014 y 2021 </h1> </center>
+title: <center> <h1> PREDICCIÓN DE LA ACCIDENTALIDAD EN LA CIUDAD DE MEDELLÍN ENTRE LOS AÑOS 2014 Y 2021 </h1> </center>
 author: <center> <h4> Juan Daniel Bula Isaza </h4> </center>
 date: <center> <h5> 13 de Diciembre de 2021 </h5> </center>
 output:
@@ -24,9 +24,12 @@ El objetivo principal de este trabajo, es realizar un aporte a dichas entidades 
 <p align = "justify">claro esta, que la estadística es una herramienta de suma importancia para la toma de decisiones y análisis que pueden contribuir a la solución de problemas actuales, por esta razón, este campo ha tomado un importante auge en la sociedad, las empresas requieren más estadísticos para realizar este tipo de tareas, elaboración, manejo y análisis de bases de datos. El objetivo de este trabajo es utilizar la Estadística y el desarrollo computacional para analizar los datos de incidentes georreferenciados de 2014 a 2021 de la ciudad de Medellín para predecir accidentes del año 2020 y 2021 con el fin de descubrir factores que se relacionan con los accidentes y aportar de forma significativa a las entidades públicas a tomar decisiones en temas de seguridad vial.</p>
 
 <h3> Enlaces de soporte </h3>
-* En el enlace se encuentra alojado el aplicativo web *VehApp* que permite visualizar la accidentalidad y pronosticar [Enlace: Aplicacion web VehApp](https://samuel-agudelo-gamboa.shinyapps.io/VEHAPP/_w_c05ae4e5/)
+* En el enlace se encuentra alojado el aplicativo web *AccApp* que permite visualizar la accidentalidad y pronosticar [Enlace: Aplicacion web AccApp](http://127.0.0.1:4255)
 
-* En el enlace se encuentra alojado el *Github* principal que contiene todos los archivos y scripts utilizados para la construcción e implementación de este trabajo [Enlace: Github principal](https://github.com/saagudeloga/Accidentalidad-Medellin)
+* En el enlace se encuentra alojado el *Github* principal que contiene todos los archivos y scripts utilizados para la construcción e implementación de este trabajo [Enlace: Github principal](https://github.com/JuandaBula/TAE-TRABAJO-01)
+
+* En el enlace se encuentra el video promocional de la aplicación *AccApp* que permite visualizar la accidentalidad y pronosticar [Enlace: Video Promocional AccApp](https://www.youtube.com/watch?v=mXex3lggZgA)
+
 
 <h1> 2. Metodología </h2>
 <p align = "justify"> Para la realización de este informe, se dispuso de una base de datos de incidentes viales en la ciudad de Medellín, entre los años 2014 y 2021, que se utilizaron como insumo principal para su respectivo análisis, con el fin de aplicar modelos predictivos y contribuir a la toma de decisiones.</p>
